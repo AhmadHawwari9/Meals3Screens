@@ -1,69 +1,47 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
-
+import 'package:provider/provider.dart';
 import 'MealsScreen.dart';
+import 'areaprovider.dart';
+
 class areaScreebdisplay extends StatefulWidget {
-  areaScreebdisplay({super.key});
-
-
+  const areaScreebdisplay({super.key});
 
   @override
-  State<areaScreebdisplay> createState() => _MyHomePageState();
+  State<areaScreebdisplay> createState() => _areaScreebdisplayState();
 }
 
-class _MyHomePageState extends State<areaScreebdisplay> {
-
+class _areaScreebdisplayState extends State<areaScreebdisplay> {
   @override
   void initState() {
     super.initState();
-    fetchAreas();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AreaProvider>(context, listen: false).fetchAreas();
+    });
   }
 
-  List<String> areas=[];
-  bool isLoading=true;
-
-  Future<void> fetchAreas() async {
-    final response = await http.get(
-        Uri.parse("https://www.themealdb.com/api/json/v1/1/list.php?a=list"));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-
-      setState(() {
-        areas = (data['meals'] as List)
-            .map((area) => area['strArea'].toString())
-            .toList();
-        isLoading = false;
-      });
-    } else {
-      throw Exception("Failed to load areas");
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
+    final areaProvider = Provider.of<AreaProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-
         backgroundColor: Colors.blue,
-
         title: Text("Area screen display"),
       ),
-      body: isLoading?Center(child: CircularProgressIndicator(),)
-          :ListView.builder(
-        itemCount: areas.length,
-      itemBuilder:(context,index){
+      body: areaProvider.isLoading
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+        itemCount: areaProvider.areas.length,
+        itemBuilder: (context, index) {
           return ListTile(
-            title: Text(areas[index]),
-            onTap: (){
-              print(areas[index]);
-              Get.to(mealsScreen(Country: areas[index],));
+            title: Text(areaProvider.areas[index]),
+            onTap: () {
+              Get.to(mealsScreen(Country: areaProvider.areas[index]));
             },
           );
-      }
+        },
       ),
     );
   }
